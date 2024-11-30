@@ -10,6 +10,7 @@ import productRouter from './routes/products';
 import paymentRouter from './routes/payments';
 import walletRouter from './routes/wallet';
 import orderRouter from './routes/orders';
+import adminRouter from './routes/admin';
 dotenv.config();
 
 const app = express();
@@ -29,6 +30,7 @@ AppDataSource.initialize()
     app.use('/api', paymentRouter);
     app.use('/api', walletRouter);
     app.use('/api', orderRouter);
+    app.use('/api/admin', adminRouter);
     // Start the server
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {

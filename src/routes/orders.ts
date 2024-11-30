@@ -20,7 +20,7 @@ const orderRouter = Router();
 
 orderRouter.post(
   "/order/initiate",
-  authMiddleware,
+  authMiddleware(),
   async (req: any, res: any) => {
     const { id, name, imageUrl, qty, price } = req.body;
     const user = req.user as User;
@@ -99,7 +99,7 @@ orderRouter.post(
   }
 );
 
-orderRouter.get("/orders", authMiddleware, async (req: any, res: any) => {
+orderRouter.get("/orders", authMiddleware(), async (req: any, res: any) => {
   const user = req.user as User;
   try {
     const orderRepository = AppDataSource.getRepository(Order);

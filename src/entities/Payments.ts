@@ -22,7 +22,7 @@ export class Payment extends BaseEntity {
   @Column({default : 'initiated'})
   status!: string;
 
-  @Column()
+  @Column({default : null})
   paid_at!: Date;
 
   @ManyToOne(() => User, (user) => user.payments, { onDelete: "CASCADE" })

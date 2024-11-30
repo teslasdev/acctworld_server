@@ -10,7 +10,7 @@ import { Order } from "../entities/Order";
 
 const walletRouter = Router();
 
-walletRouter.post("/wallet", authMiddleware, async (req: any, res: any) => {
+walletRouter.post("/wallet", authMiddleware(), async (req: any, res: any) => {
   try {
     const walletRepository = AppDataSource.getRepository(Wallet);
     const userId = parseInt(req.params.userId, 10);
@@ -30,7 +30,7 @@ walletRouter.post("/wallet", authMiddleware, async (req: any, res: any) => {
 });
 
 // Return Stats
-walletRouter.get("/analystic", authMiddleware, async (req: any, res: any) => {
+walletRouter.get("/analystic", authMiddleware(), async (req: any, res: any) => {
   const user = req.user as User;
   try {
     const walletRepository = AppDataSource.getRepository(Wallet);

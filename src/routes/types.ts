@@ -26,7 +26,7 @@ typeRouter.post("/types", async (req: any, res: any) => {
   });
 });
 
-typeRouter.get("/type", authMiddleware, async (req: any, res: any) => {
+typeRouter.get("/type", authMiddleware(), async (req: any, res: any) => {
   try {
     const typeRepository = AppDataSource.getRepository(Type);
     const data = await typeRepository.find();

@@ -17,7 +17,7 @@ const paymentRouter = Router();
 
 paymentRouter.post(
   "/payment/initiate",
-  authMiddleware,
+  authMiddleware(),
   async (req: any, res: any) => {
     const { amount, ref } = req.body;
     const user = req.user;
@@ -63,7 +63,7 @@ paymentRouter.post(
 
 paymentRouter.post(
   "/payment/verify",
-  authMiddleware,
+  authMiddleware(),
   async (req: any, res: any) => {
     const { txnref } = req.body as any;
     const user = req.user;
@@ -106,10 +106,12 @@ paymentRouter.post(
   }
 );
 
-paymentRouter.get("/payments", authMiddleware, async (req: any, res: any) => {
+paymentRouter.get("/payments", authMiddleware(), async (req: any, res: any) => {
   try {
+    const user = req.user as User
     const PaymentRepository = AppDataSource.getRepository(Payment);
     const data = await PaymentRepository.find({
+      where : { user : { id : user.id }},
       order: {
         createdAt: "DESC", // Or 'DESC' for descending order
       },

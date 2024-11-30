@@ -26,7 +26,7 @@ catRouter.post("/categories", async (req: any, res: any) => {
   });
 });
 
-catRouter.get("/categories", authMiddleware, async (req: any, res: any) => {
+catRouter.get("/categories", authMiddleware(), async (req: any, res: any) => {
   try {
     const catRepository = AppDataSource.getRepository(Category);
     const categories = await catRepository.find();

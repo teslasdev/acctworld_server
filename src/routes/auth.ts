@@ -80,7 +80,7 @@ authRouter.post("/signin", async (req: any, res: any) => {
     res.status(500).json({ message: "Error logging in", error });
   }
 });
-authRouter.get("/get-me", authMiddleware, async (req: any, res: any) => {
+authRouter.get("/get-me", authMiddleware(), async (req: any, res: any) => {
   try {
     // Access the authenticated user
     const user = req.user;

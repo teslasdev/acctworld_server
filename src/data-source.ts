@@ -11,9 +11,8 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  legacySpatialSupport: false,
+  acquireTimeout: 10000,
   synchronize: true,
   entities: [__dirname + "/entities/*.ts"],
-  extra: {
-    connectTimeout: 10000, // Increase timeout to 10 seconds
-  },
 });

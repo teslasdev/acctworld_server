@@ -9,80 +9,108 @@ import { Product } from "../entities/Product";
 import { Category } from "../entities/Catogory";
 import { Type } from "../entities/Type";
 import { ProductAccounts } from "../entities/ProductAccounts";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 const productRouter = Router();
 
-productRouter.post("/product", async (req: any, res: any) => {
-  try {
-    const productRepository = AppDataSource.getRepository(Product);
-    const catRepository = AppDataSource.getRepository(Category);
-    const typeRepository = AppDataSource.getRepository(Type);
-    const productAccountsRepository =
-      AppDataSource.getRepository(ProductAccounts);
-
-    // Destructure product details from request body
-    const {
-      name,
-      description,
-      accountFormat,
-      price,
-      imageUrl,
-      category,
-      type,
-    } = req.body;
-    const catFetch = await catRepository.findOne({ where: { id: category } });
-    const typeFetch = await typeRepository.findOne({ where: { id: type } });
-
-    if (!typeFetch) {
-      return res.status(500).json({ error: "Type not Found!" });
-    }
-
-    if (!catFetch) {
-      return res.status(500).json({ error: "Category not Found!" });
-    }
-
-    // Validate input
-    if (!name || !price) {
-      return res
-        .status(400)
-        .json({ error: "Name, price, and itemCount are required fields." });
-    }
-
-    // Create a new product
-    const newProduct = productRepository.create({
-      name,
-      description,
-      price,
-      imageUrl,
-      itemCount: accountFormat.length || 0,
-      category: catFetch,
-      type: typeFetch,
-    });
-
-    // Save the product to the database
-    const savedProduct = await productRepository.save(newProduct);
-    // Save ProductAccounts
-    const productAccounts = accountFormat.map((accountFormat: any) => {
-      const productAccount = productAccountsRepository.create({
-        accountFormat,
-        product : savedProduct,
-      });
-      return productAccount;
-    });
-
-    await productAccountsRepository.save(productAccounts);
-
-    return res.status(201).json({
-      message: "Product created successfully",
-      product: savedProduct,
-    });
-  } catch (error) {
-    console.error("Error creating product:", error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while creating the product." });
-  }
+const storage = multer.diskStorage({
+  destination: (req: any, file: any, cb) => {
+    const uploadPath = path.join(__dirname, "../public/uploads");
+    fs.mkdirSync(uploadPath, { recursive: true });
+    cb(null, uploadPath);
+  },
+  filename: (req: any, file: any, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
 });
+
+const upload = multer({ storage });
+
+productRouter.post(
+  "/product",
+  upload.single("file"),
+  async (req: any, res: any) => {
+    try {
+      const productRepository = AppDataSource.getRepository(Product);
+      const catRepository = AppDataSource.getRepository(Category);
+      const typeRepository = AppDataSource.getRepository(Type);
+      const productAccountsRepository =
+        AppDataSource.getRepository(ProductAccounts);
+      // Destructure product details from request body
+      const {
+        name,
+        description,
+        accountFormat,
+        price,
+        category,
+        type,
+        previewLink,
+      } = req.body;
+
+      const catFetch = await catRepository.findOne({ where: { id: category } });
+      const typeFetch = await typeRepository.findOne({ where: { id: type } });
+
+      let imageUrl;
+      if (req.file) {
+        imageUrl = `/uploads/${req.file.filename}`;
+      }
+
+      if (!typeFetch) {
+        return res.status(500).json({ error: "Type not Found!" });
+      }
+
+      if (!catFetch) {
+        return res.status(500).json({ error: "Category not Found!" });
+      }
+
+      // Validate input
+      if (!name || !price) {
+        return res
+          .status(400)
+          .json({ error: "Name, price, and itemCount are required fields." });
+      }
+
+      // Create a new product
+      const newProduct = productRepository.create({
+        name,
+        description,
+        price,
+        imageUrl,
+        previewLink,
+        itemCount: accountFormat?.length || 0,
+        category: catFetch,
+        type: typeFetch,
+      });
+
+      // Save the product to the database
+      const savedProduct = await productRepository.save(newProduct);
+      // Save ProductAccounts
+      if (accountFormat) {
+        const productAccounts = accountFormat.map((accountFormat: any) => {
+          const productAccount = productAccountsRepository.create({
+            accountFormat,
+            product: savedProduct,
+          });
+          return productAccount;
+        });
+
+        await productAccountsRepository.save(productAccounts);
+      }
+
+      return res.status(201).json({
+        message: "Product created successfully",
+        product: savedProduct,
+      });
+    } catch (error) {
+      console.error("Error creating product:", error);
+      return res
+        .status(500)
+        .json({ error: "An error occurred while creating the product." });
+    }
+  }
+);
 
 productRouter.get("/product", authMiddleware(), async (req: any, res: any) => {
   const { category, type } = req.query;

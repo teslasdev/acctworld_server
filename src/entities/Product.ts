@@ -18,8 +18,14 @@ export class Product extends BaseEntity {
   @Column({ nullable: true })
   imageUrl!: string;
 
+  @Column({ nullable: true })
+  previewLink!: string;
+
   @Column()
   itemCount!: number;
+
+  @Column({ default: true })
+  status!: boolean;
 
   @ManyToOne(() => Category, (category) => category.products)
   @JoinColumn({ name: "categoryId" })

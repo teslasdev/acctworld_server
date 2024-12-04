@@ -5,26 +5,97 @@ import authMiddleware from "../helper/middleware";
 
 const catRouter = Router();
 
-catRouter.post("/categories", async (req: any, res: any) => {
-  const { name } = req.body;
+catRouter.post(
+  "/categories",
+  authMiddleware(["SuperAdmin"]),
+  async (req: any, res: any) => {
+    const { name , visibility } = req.body;
 
-  const catRepository = AppDataSource.getRepository(Category);
+    console.log(visibility)
+    const catRepository = AppDataSource.getRepository(Category);
 
-  if (!name) {
-    return res.status(400).json({
-      success: false,
-      message: "Category name is required",
+    if (!name) {
+      return res.status(400).json({
+        success: false,
+        message: "Category name is required",
+      });
+    }
+
+    await catRepository.save(await catRepository.create({ name , visibility }));
+
+    res.status(201).json({
+      success: true,
+      message: "Category added successfully",
+      data: {name , visibility},
     });
   }
+);
 
-  await catRepository.save(await catRepository.create({ name }));
+catRouter.put(
+  "/categories/:id",
+  authMiddleware(["SuperAdmin"]),
+  async (req: any, res: any) => {
+    const { id } = req.params;
+    const { name , visibility } = req.body;
 
-  res.status(201).json({
-    success: true,
-    message: "Category added successfully",
-    data: name,
-  });
-});
+    console.log(visibility)
+    const catRepository = AppDataSource.getRepository(Category);
+
+    // Check if category exists
+    const category = await catRepository.findOne({ where: { id } });
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    if (!name) {
+      return res.status(400).json({
+        success: false,
+        message: "Category name is required",
+      });
+    }
+
+    // Update the category
+    category.name = name;
+    category.visibility = visibility
+    await catRepository.save(category);
+
+    res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+      data: category,
+    });
+  }
+);
+
+catRouter.delete(
+  "/categories/:id",
+  authMiddleware(["SuperAdmin"]),
+  async (req: any, res: any) => {
+    const { id } = req.params;
+
+    const catRepository = AppDataSource.getRepository(Category);
+
+    // Check if category exists
+    const category = await catRepository.findOne({ where: { id } });
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    // Delete the category
+    await catRepository.remove(category);
+
+    res.status(200).json({
+      success: true,
+      message: "Category deleted successfully",
+    });
+  }
+);
 
 catRouter.get("/categories", authMiddleware(), async (req: any, res: any) => {
   try {

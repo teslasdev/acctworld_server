@@ -14,7 +14,7 @@ import { Order } from "./Order";
 
 export enum UserRole {
   User = "User",
-  SuperAdmin = "SuperAdmin",
+  SuperAdmin = "Super Admin",
   Admin = "Admin",
 }
 

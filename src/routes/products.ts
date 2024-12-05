@@ -49,6 +49,13 @@ productRouter.post(
         previewLink,
       } = req.body;
 
+      if (accountFormat.length <= 0) {
+        return res
+          .status(400)
+          .json({ success: false, message: "No Account Format is added" });
+      }
+      
+
       const catFetch = await catRepository.findOne({ where: { id: category } });
       const typeFetch = await typeRepository.findOne({ where: { id: type } });
 

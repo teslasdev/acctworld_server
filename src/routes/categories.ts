@@ -38,7 +38,7 @@ catRouter.put(
     const { id } = req.params;
     const { name , visibility } = req.body;
 
-    console.log(visibility)
+   
     const catRepository = AppDataSource.getRepository(Category);
 
     // Check if category exists

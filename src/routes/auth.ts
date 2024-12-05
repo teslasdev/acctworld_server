@@ -10,7 +10,7 @@ import { Wallet } from "../entities/Wallet";
 const authRouter = Router();
 
 authRouter.post("/signup", async (req: any, res: any) => {
-  const { full_name, email, password } = req.body as User;
+  const { full_name, email, password , role } = req.body as User;
 
   try {
     const userRepository = AppDataSource.getRepository(User);
@@ -24,17 +24,20 @@ authRouter.post("/signup", async (req: any, res: any) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
     // Create and save the user
+
     const newUser = userRepository.create({
       full_name,
       email,
       password: hashedPassword,
+      is_admin : role !== 'User' ? true : false,
+      role
     });
     await userRepository.save(newUser);
     // Create a wallet for the new user with default balance and currency
     const newWallet = walletRepository.create({
       balance: 0,
-      currency: "NGN", 
-      user: newUser, 
+      currency: "NGN",
+      user: newUser,
     });
     await walletRepository.save(newWallet);
 
@@ -74,8 +77,9 @@ authRouter.post("/signin", async (req: any, res: any) => {
       process.env.JWT_SECRET as string,
       { expiresIn: "24h" }
     );
-
-    res.json({ message: "Login successful", token });
+    return res
+      .status(200)
+      .json({ success: true, message: "Login successful", user, token });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error });
   }
@@ -84,9 +88,17 @@ authRouter.get("/get-me", authMiddleware(), async (req: any, res: any) => {
   try {
     // Access the authenticated user
     const user = req.user;
-    res.status(200).json({ message: "User data retrieved successfully", user , success : true });
+    res
+      .status(200)
+      .json({
+        message: "User data retrieved successfully",
+        user,
+        success: true,
+      });
   } catch (error) {
-    res.status(500).json({ message: "Error retrieving user data", error , success : false });
+    res
+      .status(500)
+      .json({ message: "Error retrieving user data", error, success: false });
   }
 });
 

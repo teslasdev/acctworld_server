@@ -7,7 +7,7 @@ const catRouter = Router();
 
 catRouter.post(
   "/categories",
-  authMiddleware(["SuperAdmin"]),
+  authMiddleware(["Super Admin"]),
   async (req: any, res: any) => {
     const { name , visibility } = req.body;
 
@@ -33,7 +33,7 @@ catRouter.post(
 
 catRouter.put(
   "/categories/:id",
-  authMiddleware(["SuperAdmin"]),
+  authMiddleware(["Super Admin"]),
   async (req: any, res: any) => {
     const { id } = req.params;
     const { name , visibility } = req.body;
@@ -72,7 +72,7 @@ catRouter.put(
 
 catRouter.delete(
   "/categories/:id",
-  authMiddleware(["SuperAdmin"]),
+  authMiddleware(["Super Admin"]),
   async (req: any, res: any) => {
     const { id } = req.params;
 

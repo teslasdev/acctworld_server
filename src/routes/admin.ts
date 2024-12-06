@@ -14,7 +14,7 @@ const adminRouter = Router();
 
 adminRouter.get(
   "/get-me",
-  authMiddleware(["SuperAdmin"]),
+  authMiddleware(["Super Admin"]),
   async (req: any, res: any) => {
     try {
       // Access the authenticated user
@@ -84,7 +84,7 @@ adminRouter.get("/users", authMiddleware(), async (req: any, res: any) => {
 //   Analystics
 adminRouter.get(
   "/analystic",
-  authMiddleware(["SuperAdmin"]),
+  authMiddleware(["Super Admin"]),
   async (req: any, res: any) => {
     const user = req.user as User;
     try {
@@ -136,7 +136,7 @@ adminRouter.get(
 // Orders
 adminRouter.get(
   "/orders",
-  authMiddleware(["SuperAdmin"]),
+  authMiddleware(["Super Admin"]),
   async (req: any, res: any) => {
     const user = req.user as User;
     try {

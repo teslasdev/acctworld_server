@@ -30,7 +30,7 @@ walletRouter.post("/wallet", authMiddleware(), async (req: any, res: any) => {
 });
 
 // Return Stats
-walletRouter.get("/analystic", authMiddleware(), async (req: any, res: any) => {
+walletRouter.get("/analystic", authMiddleware(["Super Admin"]), async (req: any, res: any) => {
   const user = req.user as User;
   try {
     const walletRepository = AppDataSource.getRepository(Wallet);

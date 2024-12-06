@@ -49,7 +49,7 @@ typeRouter.post("/types", upload.single("file"), async (req: any, res: any) => {
 
 typeRouter.put(
   "/types/:id",
-  authMiddleware(["SuperAdmin"]),
+  authMiddleware(["Super Admin"]),
   upload.single("file"),
   async (req: any, res: any) => {
     const { id } = req.params;

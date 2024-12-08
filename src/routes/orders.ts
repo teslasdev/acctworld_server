@@ -65,6 +65,10 @@ orderRouter.post(
         return res.status(404).json({ message: "Wallet not found" });
       }
 
+      if (parseInt(price) > wallet.balance) {
+        return res.status(404).json({ message: "Insufficient Funds , Fund Account" });
+      }
+
       // Step 3: Delete the selected records from `product_accounts`
       const idsToDelete = productAccounts.map((account) => account.id);
       await productAccountsRepository.delete(idsToDelete);

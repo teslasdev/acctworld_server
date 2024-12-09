@@ -119,7 +119,7 @@ productRouter.post(
   }
 );
 
-productRouter.get("/product", authMiddleware(), async (req: any, res: any) => {
+productRouter.get("/product", async (req: any, res: any) => {
   const { category, type } = req.query;
   try {
     const productRepository = AppDataSource.getRepository(Product);

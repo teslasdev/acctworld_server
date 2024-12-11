@@ -21,7 +21,6 @@ app.use(cors());
 app.use(express.json());
 
 
-
 // Initialize database connection
 AppDataSource.initialize()
   .then(() => {

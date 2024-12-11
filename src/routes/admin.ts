@@ -142,6 +142,7 @@ adminRouter.get(
     try {
       const orderRepository = AppDataSource.getRepository(Order);
       const data = await orderRepository.find({
+        relations : ["user"],
         order: {
           createdAt: "DESC",
         },

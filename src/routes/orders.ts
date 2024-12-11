@@ -103,7 +103,7 @@ orderRouter.post(
   }
 );
 
-orderRouter.get("/orders", authMiddleware(), async (req: any, res: any) => {
+orderRouter.get("/orders", authMiddleware(["User"]), async (req: any, res: any) => {
   const user = req.user as User;
   try {
     const orderRepository = AppDataSource.getRepository(Order);

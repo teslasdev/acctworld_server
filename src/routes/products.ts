@@ -54,7 +54,6 @@ productRouter.post(
           .status(400)
           .json({ success: false, message: "No Account Format is added" });
       }
-      
 
       const catFetch = await catRepository.findOne({ where: { id: category } });
       const typeFetch = await typeRepository.findOne({ where: { id: type } });
@@ -119,6 +118,110 @@ productRouter.post(
   }
 );
 
+productRouter.put(
+  "/product/:id",
+  upload.single("file"),
+  async (req: any, res: any) => {
+    try {
+      const productRepository = AppDataSource.getRepository(Product);
+      const categoryRepository = AppDataSource.getRepository(Category);
+      const typeRepository = AppDataSource.getRepository(Type);
+      const productAccountsRepository =
+        AppDataSource.getRepository(ProductAccounts);
+
+      const { id } = req.params;
+      const {
+        name,
+        description,
+        accountFormat,
+        price,
+        category,
+        type,
+        previewLink,
+      } = req.body;
+
+      // Fetch existing product
+      const product = await productRepository.findOne({
+        where: { id },
+        relations: ["category", "type", "accountFormats"],
+      });
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found.",
+        });
+      }
+
+      // Validate input
+      if (!name || !price) {
+        return res.status(400).json({
+          success: false,
+          message: "Name and price are required fields.",
+        });
+      }
+
+      if (!accountFormat || accountFormat.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Account format cannot be empty.",
+        });
+      }
+
+      const categoryEntity = await categoryRepository.findOne({
+        where: { id: category },
+      });
+      const typeEntity = await typeRepository.findOne({ where: { id: type } });
+
+      if (categoryEntity) {
+        product.category = categoryEntity;
+      }
+
+      if (typeEntity) {
+        product.type = typeEntity;
+      }
+
+      // Update product fields
+      product.name = name;
+      product.description = description;
+      product.price = price;
+      product.previewLink = previewLink;
+      product.itemCount = accountFormat.length;
+
+      if (req.file) {
+        product.imageUrl = `/uploads/${req.file.filename}`;
+      }
+      // Update the product
+      const updatedProduct = await productRepository.save(product);
+      // Update product accounts
+      // Remove old ProductAccounts
+      await productAccountsRepository.delete({ product: { id } });
+
+      // Add new ProductAccounts
+      const newProductAccounts = accountFormat.map((format: any) =>
+        productAccountsRepository.create({
+          accountFormat: format,
+          product: updatedProduct,
+        })
+      );
+      await productAccountsRepository.save(newProductAccounts);
+
+      return res.status(200).json({
+        success: true,
+        message: "Product updated successfully.",
+        product: updatedProduct,
+      });
+    } catch (error) {
+      console.error("Error updating product:", error);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while updating the product.",
+        error: error,
+      });
+    }
+  }
+);
+
 productRouter.get("/product", async (req: any, res: any) => {
   const { category, type } = req.query;
   try {
@@ -152,6 +255,75 @@ productRouter.get("/product", async (req: any, res: any) => {
     res.status(500).json({
       message: "Error retrieving products data",
       error,
+      success: false,
+    });
+  }
+});
+
+productRouter.get("/product/one", async (req: any, res: any) => {
+  const { product_id } = req.query;
+
+  try {
+    const productRepository = AppDataSource.getRepository(Product);
+
+    const product = await productRepository
+      .createQueryBuilder("product")
+      .leftJoinAndSelect("product.category", "category")
+      .leftJoinAndSelect("product.type", "type")
+      .leftJoinAndSelect("product.accountFormats", "accountFormats")
+      .where("product.id = :product_id", { product_id })
+      .getOne();
+
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found",
+        success: false,
+      });
+    }
+
+    res.status(200).json({
+      message: "Product data retrieved successfully",
+      product,
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error retrieving product data",
+      error: error,
+      success: false,
+    });
+  }
+});
+
+productRouter.delete("/product/delete", async (req: any, res: any) => {
+  const { product_id } = req.query;
+
+  try {
+    const productRepository = AppDataSource.getRepository(Product);
+
+    // Find the product to ensure it exists before deletion
+    const product = await productRepository.findOne({
+      where: { id: product_id },
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found",
+        success: false,
+      });
+    }
+
+    // Delete the product
+    await productRepository.delete({ id: product_id });
+
+    res.status(200).json({
+      message: "Product deleted successfully",
+      success: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error deleting product",
+      error: error,
       success: false,
     });
   }

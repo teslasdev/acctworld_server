@@ -65,7 +65,7 @@ typeRouter.post("/types", upload.single("file"), async (req: any, res: any) => {
 
 typeRouter.get(
   "/type/:id",
-  authMiddleware(["Super Admin"]),
+  authMiddleware(["Super Admin" , "User" , "Admin"]),
   async (req: any, res: any) => {
     const typeRepository = AppDataSource.getRepository(Type);
     const { id } = req.params;
@@ -95,7 +95,7 @@ typeRouter.get(
 
 typeRouter.put(
   "/types/:id",
-  authMiddleware(["Super Admin"]),
+  authMiddleware(["Super Admin"  , "Admin"]),
   upload.single("file"),
   async (req: any, res: any) => {
     const { id } = req.params;

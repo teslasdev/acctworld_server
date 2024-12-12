@@ -10,7 +10,7 @@ import { Wallet } from "../entities/Wallet";
 const authRouter = Router();
 
 authRouter.post("/signup", async (req: any, res: any) => {
-  const { full_name, email, password , role } = req.body as User;
+  const { full_name, email, password, role } = req.body as User;
 
   try {
     const userRepository = AppDataSource.getRepository(User);
@@ -29,8 +29,8 @@ authRouter.post("/signup", async (req: any, res: any) => {
       full_name,
       email,
       password: hashedPassword,
-      is_admin : role !== 'User' ? true : false,
-      role
+      is_admin: role !== "User" ? true : false,
+      role,
     });
     await userRepository.save(newUser);
     // Create a wallet for the new user with default balance and currency
@@ -88,17 +88,46 @@ authRouter.get("/get-me", authMiddleware(), async (req: any, res: any) => {
   try {
     // Access the authenticated user
     const user = req.user;
-    res
-      .status(200)
-      .json({
-        message: "User data retrieved successfully",
-        user,
-        success: true,
-      });
+    res.status(200).json({
+      message: "User data retrieved successfully",
+      user,
+      success: true,
+    });
   } catch (error) {
     res
       .status(500)
       .json({ message: "Error retrieving user data", error, success: false });
+  }
+});
+
+authRouter.post("/change-password",  authMiddleware() , async (req: any, res: any) => {
+  const { newPassword } = req.body;
+
+  if (!newPassword) {
+    return res.status(400).json({ error: "New Password is required" });
+  }
+  try {
+    const userId = req.user?.id; // Assumes `req.user` is populated by middleware after authentication
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOneBy(userId);
+
+    console.log(user)
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Update the password in the database
+    user.password = hashedPassword;
+    await userRepository.save(user);
+
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error("Error changing password:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

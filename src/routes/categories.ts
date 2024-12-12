@@ -20,6 +20,7 @@ catRouter.post(
         message: "Category name is required",
       });
     }
+    
 
     await catRepository.save(await catRepository.create({ name , visibility }));
 

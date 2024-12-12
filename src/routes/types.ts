@@ -5,6 +5,8 @@ import authMiddleware from "../helper/middleware";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { Category } from "../entities/Catogory";
+import { In } from "typeorm";
 const typeRouter = Router();
 
 const storage = multer.diskStorage({
@@ -21,9 +23,18 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 typeRouter.post("/types", upload.single("file"), async (req: any, res: any) => {
-  const { name, visibility } = req.body;
+  const { name, category, visibility } = req.body;
 
   const typeRepository = AppDataSource.getRepository(Type);
+  const catRepository = AppDataSource.getRepository(Category);
+
+  const categories = await catRepository.findBy({ id: In(category) });
+
+  if (categories.length !== category.length) {
+    return res
+      .status(404)
+      .json({ message: "One or more categories not found" });
+  }
 
   if (!name) {
     return res.status(400).json({
@@ -37,7 +48,12 @@ typeRouter.post("/types", upload.single("file"), async (req: any, res: any) => {
   const imageUrl = `/uploads/${req.file.filename}`;
 
   await typeRepository.save(
-    await typeRepository.create({ name, imageUrl, visibility: isActiveBoolean })
+    await typeRepository.create({
+      name,
+      categories,
+      imageUrl,
+      visibility: isActiveBoolean,
+    })
   );
 
   res.status(201).json({
@@ -47,16 +63,49 @@ typeRouter.post("/types", upload.single("file"), async (req: any, res: any) => {
   });
 });
 
+typeRouter.get(
+  "/type/:id",
+  authMiddleware(["Super Admin"]),
+  async (req: any, res: any) => {
+    const typeRepository = AppDataSource.getRepository(Type);
+    const { id } = req.params;
+    try {
+      const type = await typeRepository.findOne({
+        where: { id: id },
+        relations: ["categories"], // Include related categories if needed
+      });
+
+      if (!type) {
+        throw new Error(`Type with id ${id} not found`);
+      }
+      res.status(200).json({
+        message: "Types retrieved successfully",
+        type,
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Error retrieving type data",
+        error,
+        success: false,
+      });
+    }
+  }
+);
+
 typeRouter.put(
   "/types/:id",
   authMiddleware(["Super Admin"]),
   upload.single("file"),
   async (req: any, res: any) => {
     const { id } = req.params;
-    const { name, visibility } = req.body;
+    const { name, category, visibility } = req.body;
     const uploadedFile = req.file;
-
     const typeRepository = AppDataSource.getRepository(Type);
+    const catRepository = AppDataSource.getRepository(Category);
+
+    const categories = await catRepository.findBy({ id: In(category) });
+    
 
     // Check if type exists
     const type = await typeRepository.findOne({ where: { id } });
@@ -95,6 +144,9 @@ typeRouter.put(
     }
 
     const isActiveBoolean = visibility === "true" ? true : false;
+    if (categories) {
+      type.categories = categories;
+    }
 
     type.name = name;
     type.visibility = isActiveBoolean;
@@ -116,7 +168,9 @@ typeRouter.put(
 typeRouter.get("/type", async (req: any, res: any) => {
   try {
     const typeRepository = AppDataSource.getRepository(Type);
-    const data = await typeRepository.find();
+    const data = await typeRepository.find({
+      relations: ["categories"],
+    });
     res.status(200).json({
       message: "Types retrieved successfully",
       data,

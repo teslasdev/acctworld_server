@@ -55,8 +55,9 @@ productRouter.post(
           .json({ success: false, message: "No Account Format is added" });
       }
 
-      const catFetch = await catRepository.findOne({ where: { id: category } });
       const typeFetch = await typeRepository.findOne({ where: { id: type } });
+      const catFetch = await catRepository.findOne({ where: { id: type } });
+
 
       let imageUrl;
       if (req.file) {
@@ -68,7 +69,7 @@ productRouter.post(
       }
 
       if (!catFetch) {
-        return res.status(500).json({ error: "Category not Found!" });
+        return res.status(500).json({ error: "Type not Found!" });
       }
 
       // Validate input
@@ -84,9 +85,9 @@ productRouter.post(
         description,
         price,
         imageUrl,
+        category : catFetch,
         previewLink,
         itemCount: accountFormat?.length || 0,
-        category: catFetch,
         type: typeFetch,
       });
 
@@ -104,7 +105,6 @@ productRouter.post(
 
         await productAccountsRepository.save(productAccounts);
       }
-
       return res.status(201).json({
         message: "Product created successfully",
         product: savedProduct,
@@ -124,7 +124,6 @@ productRouter.put(
   async (req: any, res: any) => {
     try {
       const productRepository = AppDataSource.getRepository(Product);
-      const categoryRepository = AppDataSource.getRepository(Category);
       const typeRepository = AppDataSource.getRepository(Type);
       const productAccountsRepository =
         AppDataSource.getRepository(ProductAccounts);
@@ -135,7 +134,6 @@ productRouter.put(
         description,
         accountFormat,
         price,
-        category,
         type,
         previewLink,
       } = req.body;
@@ -168,14 +166,7 @@ productRouter.put(
         });
       }
 
-      const categoryEntity = await categoryRepository.findOne({
-        where: { id: category },
-      });
       const typeEntity = await typeRepository.findOne({ where: { id: type } });
-
-      if (categoryEntity) {
-        product.category = categoryEntity;
-      }
 
       if (typeEntity) {
         product.type = typeEntity;
@@ -223,24 +214,24 @@ productRouter.put(
 );
 
 productRouter.get("/product", async (req: any, res: any) => {
-  const { category, type } = req.query;
+  const { category , type } = req.query;
   try {
     const productRepository = AppDataSource.getRepository(Product);
     const productsQuery = productRepository
       .createQueryBuilder("product")
-      .leftJoinAndSelect("product.category", "category")
-      .leftJoinAndSelect("product.type", "type");
+      .leftJoinAndSelect("product.type", "type")
+      .leftJoinAndSelect("type.categories", "categories")
+      .leftJoinAndSelect("product.category", "category");
 
     // Add a filter for `category` if provided
-    if (category) {
-      productsQuery.andWhere("category.id = :categoryId", {
-        categoryId: category,
-      });
-    }
 
     // Add a filter for `type` (assuming `type` is mandatory)
     if (type) {
       productsQuery.andWhere("type.id = :typeId", { typeId: type });
+    }
+
+    if (category) {
+      productsQuery.andWhere("category.id = :categoryId", { categoryId: category });
     }
 
     // Execute the query

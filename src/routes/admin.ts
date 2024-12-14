@@ -60,16 +60,24 @@ adminRouter.get("/payments", authMiddleware(), async (req: any, res: any) => {
 // Users
 adminRouter.get("/users", authMiddleware(), async (req: any, res: any) => {
   try {
-    const user = req.user as User;
     const usersRepository = AppDataSource.getRepository(User);
-    const data = await usersRepository.find({
-      order: {
-        createdAt: "DESC",
-      },
+    const ordersRepository = AppDataSource.getRepository(Order);
+    const data = await usersRepository
+      .createQueryBuilder("user")
+      .leftJoinAndSelect("user.wallet", "wallet")
+      .leftJoinAndSelect("user.orders", "orders")
+      .addSelect("SUM(orders.price)", "totalOrderPrice")
+      .groupBy("user.id") // Group by user to calculate total for each user
+      .addGroupBy("wallet.id") // Ensure wallet data remains consistent
+      .orderBy("user.createdAt", "DESC")
+      .getRawAndEntities();
+
+    data.entities.forEach((user, index) => {
+      user.totalOrderPrice = parseInt(data.raw[index].totalOrderPrice) ?? 0; // Attach calculated sum to each user
     });
     res.status(200).json({
       message: "Users retrieved successfully",
-      data,
+      data : data.entities,
       success: true,
     });
   } catch (error) {
@@ -142,7 +150,7 @@ adminRouter.get(
     try {
       const orderRepository = AppDataSource.getRepository(Order);
       const data = await orderRepository.find({
-        relations : ["user"],
+        relations: ["user"],
         order: {
           createdAt: "DESC",
         },

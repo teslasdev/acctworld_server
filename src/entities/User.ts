@@ -47,4 +47,6 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Order, (order) => order.user)
   orders!: Order[];
+  totalOrderPrice?: number;
+
 }

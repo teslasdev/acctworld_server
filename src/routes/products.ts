@@ -56,8 +56,7 @@ productRouter.post(
       }
 
       const typeFetch = await typeRepository.findOne({ where: { id: type } });
-      const catFetch = await catRepository.findOne({ where: { id: type } });
-
+      const catFetch = await catRepository.findOne({ where: { id: category } });
 
       let imageUrl;
       if (req.file) {
@@ -69,7 +68,7 @@ productRouter.post(
       }
 
       if (!catFetch) {
-        return res.status(500).json({ error: "Type not Found!" });
+        return res.status(500).json({ error: "Category not Found!" });
       }
 
       // Validate input
@@ -85,7 +84,7 @@ productRouter.post(
         description,
         price,
         imageUrl,
-        category : catFetch,
+        category: catFetch,
         previewLink,
         itemCount: accountFormat?.length || 0,
         type: typeFetch,
@@ -124,6 +123,7 @@ productRouter.put(
   async (req: any, res: any) => {
     try {
       const productRepository = AppDataSource.getRepository(Product);
+      const catRepository = AppDataSource.getRepository(Category);
       const typeRepository = AppDataSource.getRepository(Type);
       const productAccountsRepository =
         AppDataSource.getRepository(ProductAccounts);
@@ -135,6 +135,7 @@ productRouter.put(
         accountFormat,
         price,
         type,
+        category,
         previewLink,
       } = req.body;
 
@@ -167,11 +168,17 @@ productRouter.put(
       }
 
       const typeEntity = await typeRepository.findOne({ where: { id: type } });
+      const catEntity = await catRepository.findOne({
+        where: { id: category },
+      });
 
       if (typeEntity) {
         product.type = typeEntity;
       }
 
+      if (catEntity) {
+        product.category = catEntity;
+      }
       // Update product fields
       product.name = name;
       product.description = description;
@@ -214,7 +221,7 @@ productRouter.put(
 );
 
 productRouter.get("/product", async (req: any, res: any) => {
-  const { category , type } = req.query;
+  const { category, type } = req.query;
   try {
     const productRepository = AppDataSource.getRepository(Product);
     const productsQuery = productRepository
@@ -231,7 +238,9 @@ productRouter.get("/product", async (req: any, res: any) => {
     }
 
     if (category) {
-      productsQuery.andWhere("category.id = :categoryId", { categoryId: category });
+      productsQuery.andWhere("category.id = :categoryId", {
+        categoryId: category,
+      });
     }
 
     // Execute the query

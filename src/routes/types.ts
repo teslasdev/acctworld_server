@@ -28,9 +28,12 @@ typeRouter.post("/types", upload.single("file"), async (req: any, res: any) => {
   const typeRepository = AppDataSource.getRepository(Type);
   const catRepository = AppDataSource.getRepository(Category);
 
-  const categories = await catRepository.findBy({ id: In(category) });
+  const categoryArray = category.split(",").map(Number);
+  const categories = await catRepository.findBy({ id: In(categoryArray) });
 
-  if (categories.length !== category.length) {
+  
+
+  if (categories.length !== categoryArray.length) {
     return res
       .status(404)
       .json({ message: "One or more categories not found" });
@@ -65,7 +68,7 @@ typeRouter.post("/types", upload.single("file"), async (req: any, res: any) => {
 
 typeRouter.get(
   "/type/:id",
-  authMiddleware(["Super Admin" , "User" , "Admin"]),
+  authMiddleware(["Super Admin", "User", "Admin"]),
   async (req: any, res: any) => {
     const typeRepository = AppDataSource.getRepository(Type);
     const { id } = req.params;
@@ -95,7 +98,7 @@ typeRouter.get(
 
 typeRouter.put(
   "/types/:id",
-  authMiddleware(["Super Admin"  , "Admin"]),
+  authMiddleware(["Super Admin", "Admin"]),
   upload.single("file"),
   async (req: any, res: any) => {
     const { id } = req.params;
@@ -103,10 +106,16 @@ typeRouter.put(
     const uploadedFile = req.file;
     const typeRepository = AppDataSource.getRepository(Type);
     const catRepository = AppDataSource.getRepository(Category);
-
-    const categories = await catRepository.findBy({ id: In(category) });
     
+    const categoryArray = category.split(",").map(Number);
+    const categories = await catRepository.find({
+      where: {
+        id: In(categoryArray),
+      },
+    });
 
+    console.log(categories)
+    
     // Check if type exists
     const type = await typeRepository.findOne({ where: { id } });
     if (!type) {

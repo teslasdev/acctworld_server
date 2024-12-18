@@ -11,6 +11,7 @@ import { BaseEntity } from "./BaseEntity";
 import { Payment } from "./Payments";
 import { Wallet } from "./Wallet";
 import { Order } from "./Order";
+import { ResetToken } from "./ResetToken";
 
 export enum UserRole {
   User = "User",
@@ -48,5 +49,8 @@ export class User extends BaseEntity {
   @OneToMany(() => Order, (order) => order.user)
   orders!: Order[];
   totalOrderPrice?: number;
+
+  @OneToMany(() => ResetToken, (resetToken) => resetToken.user)
+  resetTokens!: ResetToken[];
 
 }

@@ -6,6 +6,11 @@ import { User } from "../entities/User";
 import { AppDataSource } from "../data-source";
 import authMiddleware from "../helper/middleware";
 import { Wallet } from "../entities/Wallet";
+import {
+  requestPasswordReset,
+  resetPassword,
+  sendResetEmail,
+} from "../services/PasswordReset";
 
 const authRouter = Router();
 
@@ -100,34 +105,86 @@ authRouter.get("/get-me", authMiddleware(), async (req: any, res: any) => {
   }
 });
 
-authRouter.post("/change-password",  authMiddleware() , async (req: any, res: any) => {
-  const { newPassword } = req.body;
+authRouter.post(
+  "/change-password",
+  authMiddleware(),
+  async (req: any, res: any) => {
+    const { newPassword } = req.body;
 
-  if (!newPassword) {
-    return res.status(400).json({ error: "New Password is required" });
+    if (!newPassword) {
+      return res.status(400).json({ error: "New Password is required" });
+    }
+    try {
+      const userId = req.user?.id; // Assumes `req.user` is populated by middleware after authentication
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const userRepository = AppDataSource.getRepository(User);
+      const user = await userRepository.findOneBy(userId);
+
+      console.log(user);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      // Update the password in the database
+      user.password = hashedPassword;
+      await userRepository.save(user);
+
+      res.status(200).json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
+);
+
+// Password Reset
+authRouter.post("/password-reset", async (req, res) => {
   try {
-    const userId = req.user?.id; // Assumes `req.user` is populated by middleware after authentication
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+        success: false,
+      });
     }
-    const userRepository = AppDataSource.getRepository(User);
-    const user = await userRepository.findOneBy(userId);
 
-    console.log(user)
+    // Find user by email
+    const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({
+        message: "User with this email does not exist",
+        success: false,
+      });
     }
-    // Hash the new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    // Update the password in the database
-    user.password = hashedPassword;
-    await userRepository.save(user);
-
-    res.status(200).json({ message: "Password changed successfully" });
+    const token = await requestPasswordReset(email);
+    await sendResetEmail(email, token);
+    res.status(200).json({
+      message: "Password reset email sent",
+      success: true,
+    });
   } catch (error) {
-    console.error("Error changing password:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res
+      .status(400)
+      .json({ message: "Error retrieving user data", error, success: false });
+  }
+});
+
+authRouter.post("/reset-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    console.log(req.body);
+    await resetPassword(token, password);
+    res.status(200).json({
+      message: "Password updated successfully",
+      success: true,
+    });
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "Error retrieving user data", error, success: false });
   }
 });
 

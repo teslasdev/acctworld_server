@@ -16,6 +16,9 @@ export class Payment extends BaseEntity {
   @Column()
   redirectUrl!: string;
 
+  @Column({default : 'ercspay'})
+  paymentMethod!: string;
+
   @Column()
   currency!: string;
 

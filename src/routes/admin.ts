@@ -77,7 +77,7 @@ adminRouter.get("/users", authMiddleware(), async (req: any, res: any) => {
     });
     res.status(200).json({
       message: "Users retrieved successfully",
-      data : data.entities,
+      data: data.entities,
       success: true,
     });
   } catch (error) {
@@ -159,6 +159,51 @@ adminRouter.get(
         message: "Orders retrieved successfully",
         data,
         success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Error retrieving order data",
+        error,
+        success: false,
+      });
+    }
+  }
+);
+
+adminRouter.post(
+  "/balance/update",
+  authMiddleware(["Super Admin"]),
+  async (req: any, res: any) => {
+    const user = req.user;
+    const { type, amount, userId } = req.body;
+    try {
+      const walletRepository = AppDataSource.getRepository(Wallet);
+      const wallet = await walletRepository.findOne({
+        where: { user: { id: userId } },
+      });
+
+      if (!wallet) {
+        return res
+          .status(404)
+          .json({ message: "Wallet not found for this user." });
+      }
+
+      if (type == "credit") {
+        wallet.balance += parseInt(amount);
+      } else if (type == "debit") {
+        if (wallet.balance < amount) {
+          return res.status(400).json({ message: "Insufficient balance." });
+        }
+        wallet.balance -= parseInt(amount);
+      }
+
+      // Save the updated wallet
+      await walletRepository.save(wallet);
+
+      res.status(200).json({
+        success: true,
+        message: "Wallet balance updated successfully.",
+        balance: wallet.balance,
       });
     } catch (error) {
       res.status(500).json({

@@ -29,6 +29,7 @@ walletRouter.post("/wallet", authMiddleware(), async (req: any, res: any) => {
   }
 });
 
+
 // Return Stats
 walletRouter.get("/analystic", authMiddleware(["User"]), async (req: any, res: any) => {
   const user = req.user as User;

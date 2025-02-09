@@ -33,29 +33,33 @@ adminRouter.get(
 );
 
 // Payment Routes
-adminRouter.get("/payments", authMiddleware(), async (req: any, res: any) => {
-  try {
-    const user = req.user as User;
-    const PaymentRepository = AppDataSource.getRepository(Payment);
-    const data = await PaymentRepository.find({
-      relations: ["user"],
-      order: {
-        createdAt: "DESC",
-      },
-    });
-    res.status(200).json({
-      message: "Payment retrieved successfully",
-      data,
-      success: true,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Error retrieving Payment data",
-      error,
-      success: false,
-    });
+adminRouter.get(
+  "/payments",
+  authMiddleware(["Super Admin"]),
+  async (req: any, res: any) => {
+    try {
+      const user = req.user as User;
+      const PaymentRepository = AppDataSource.getRepository(Payment);
+      const data = await PaymentRepository.find({
+        relations: ["user"],
+        order: {
+          createdAt: "DESC",
+        },
+      });
+      res.status(200).json({
+        message: "Payment retrieved successfully",
+        data,
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Error retrieving Payment data",
+        error,
+        success: false,
+      });
+    }
   }
-});
+);
 
 // Users
 adminRouter.get("/users", authMiddleware(), async (req: any, res: any) => {
@@ -120,8 +124,6 @@ adminRouter.get(
         { success: 0, failed: 0, initiated: 0, all: 0 } // Initial values
       );
 
-      console.log(totals);
-
       const analystic = {
         payment: total,
         products: totalPro,
@@ -175,7 +177,7 @@ adminRouter.post(
   authMiddleware(["Super Admin"]),
   async (req: any, res: any) => {
     const user = req.user;
-    const { type, amount, userId } = req.body;
+    const { type, amount, userId, ref } = req.body;
     try {
       const walletRepository = AppDataSource.getRepository(Wallet);
       const wallet = await walletRepository.findOne({
@@ -196,6 +198,21 @@ adminRouter.post(
         }
         wallet.balance -= parseInt(amount);
       }
+
+      // Save payment in the repository
+      const paymentRepository = AppDataSource.getRepository(Payment);
+      const newPayment = paymentRepository.create({
+        amount: parseInt(amount),
+        paymentReference: ref,
+        currency: "NGN",
+        redirectUrl: "",
+        user,
+        paymentMethod: type + "ed By " + user.full_name,
+        status: type,
+        txnReference : ref
+      });
+
+      await paymentRepository.save(newPayment);
 
       // Save the updated wallet
       await walletRepository.save(wallet);

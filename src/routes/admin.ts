@@ -14,7 +14,7 @@ const adminRouter = Router();
 
 adminRouter.get(
   "/get-me",
-  authMiddleware(["Super Admin"]),
+  authMiddleware(["Super Admin" , "Admin"]),
   async (req: any, res: any) => {
     try {
       // Access the authenticated user
@@ -35,7 +35,7 @@ adminRouter.get(
 // Payment Routes
 adminRouter.get(
   "/payments",
-  authMiddleware(["Super Admin"]),
+  authMiddleware(["Super Admin" , "Admin"]),
   async (req: any, res: any) => {
     try {
       const user = req.user as User;
@@ -62,7 +62,7 @@ adminRouter.get(
 );
 
 // Users
-adminRouter.get("/users", authMiddleware(), async (req: any, res: any) => {
+adminRouter.get("/users", authMiddleware(["Super Admin" , "Admin"]), async (req: any, res: any) => {
   try {
     const usersRepository = AppDataSource.getRepository(User);
     const ordersRepository = AppDataSource.getRepository(Order);
@@ -96,7 +96,7 @@ adminRouter.get("/users", authMiddleware(), async (req: any, res: any) => {
 //   Analystics
 adminRouter.get(
   "/analystic",
-  authMiddleware(["Super Admin"]),
+  authMiddleware(["Super Admin" , "Admin"]),
   async (req: any, res: any) => {
     const user = req.user as User;
     try {
@@ -146,7 +146,7 @@ adminRouter.get(
 // Orders
 adminRouter.get(
   "/orders",
-  authMiddleware(["Super Admin"]),
+  authMiddleware(["Super Admin" , "Admin"]),
   async (req: any, res: any) => {
     const user = req.user as User;
     try {
